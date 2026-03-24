@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+if [ ! -f /storage/db/database.sql ]; then
+    echo "No database dump found, skipping restore."
+    exit 0
+fi
+
+DB_PASSWORD=$(cat /storage/config/.db_password)
+
+echo "Waiting for MariaDB..."
+for i in $(seq 1 30); do
+    if mysqladmin ping --silent 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
+echo "Restoring WordPress database..."
+mysql -u wordpress -p"${DB_PASSWORD}" wordpress < /storage/db/database.sql
+
+echo "Database restored."
