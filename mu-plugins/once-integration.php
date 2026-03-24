@@ -6,7 +6,7 @@
 
 // Configure SMTP from Once environment variables
 add_action('phpmailer_init', function ($phpmailer) {
-    $host = getenv('SMTP_SERVER');
+    $host = getenv('SMTP_ADDRESS');
     if (!$host) {
         return;
     }
@@ -15,13 +15,13 @@ add_action('phpmailer_init', function ($phpmailer) {
     $phpmailer->Host       = $host;
     $phpmailer->Port       = getenv('SMTP_PORT') ?: 587;
     $phpmailer->SMTPAuth   = true;
-    $phpmailer->Username   = getenv('SMTP_LOGIN');
+    $phpmailer->Username   = getenv('SMTP_USERNAME');
     $phpmailer->Password   = getenv('SMTP_PASSWORD');
     $phpmailer->SMTPSecure = 'tls';
 
-    $from = getenv('SMTP_FROM');
+    $from = getenv('MAILER_FROM_ADDRESS');
     if ($from) {
         $phpmailer->From     = $from;
-        $phpmailer->FromName = getenv('SMTP_FROM_NAME') ?: get_bloginfo('name');
+        $phpmailer->FromName = get_bloginfo('name');
     }
 });
