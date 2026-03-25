@@ -15,8 +15,10 @@ This installs the Once CLI and launches the setup dashboard.
 ## Deploy WordPress
 
 ```sh
-once deploy ghcr.io/<your-username>/once_wordpress --host yourdomain.com
+once deploy ghcr.io/hallmatt/once_wordpress --host yourdomain.com
 ```
+
+Image: `ghcr.io/hallmatt/once_wordpress`
 
 That's it. Once will:
 
@@ -52,7 +54,7 @@ once restore backup-2024-01-15.tar
 To deploy a new version of the image:
 
 ```sh
-once deploy ghcr.io/<your-username>/once_wordpress --host yourdomain.com
+once deploy ghcr.io/hallmatt/once_wordpress --host yourdomain.com
 ```
 
 Once also supports automatic image updates via its background service.
@@ -72,17 +74,20 @@ All persistent data lives in `/storage`:
 
 ```
 /storage/
+├── wordpress/          # WordPress core + wp-content (auto-updates in place)
+│   ├── wp-admin/
+│   ├── wp-includes/
+│   └── wp-content/
+│       ├── themes/
+│       ├── plugins/
+│       ├── uploads/
+│       └── mu-plugins/
 ├── db/
 │   ├── mysql/          # MariaDB data files
 │   └── database.sql    # backup dump (created by pre-backup hook)
-├── config/
-│   ├── wp-config.php   # generated on first run
-│   └── .db_password    # MariaDB credentials
-└── wp-content/
-    ├── themes/
-    ├── plugins/
-    ├── uploads/
-    └── mu-plugins/
+└── config/
+    ├── wp-config.php   # generated on first run
+    └── .db_password    # MariaDB credentials
 ```
 
 ## See also

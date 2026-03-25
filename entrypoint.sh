@@ -62,6 +62,16 @@ fi
 rm -rf "${WP_PATH}"
 ln -sf "${WP_DIR}" "${WP_PATH}"
 
+# ── Nginx Config ─────────────────────────────────────────────
+if [ "${DISABLE_CACHE}" = "true" ]; then
+    echo "Page cache disabled."
+    cp /etc/nginx/http.d/nginx-nocache.conf /etc/nginx/http.d/default.conf
+else
+    echo "Page cache enabled."
+    cp /etc/nginx/http.d/nginx-cache.conf /etc/nginx/http.d/default.conf
+fi
+rm -f /etc/nginx/http.d/nginx-cache.conf /etc/nginx/http.d/nginx-nocache.conf
+
 # ── Once Integration ─────────────────────────────────────────
 mkdir -p "${WP_DIR}/wp-content/mu-plugins"
 cp /opt/once/mu-plugins/*.php "${WP_DIR}/wp-content/mu-plugins/"

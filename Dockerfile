@@ -60,7 +60,8 @@ COPY mu-plugins/ /opt/once/mu-plugins/
 COPY up.php /opt/once/up.php
 
 # Configuration and scripts
-COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY nginx-cache.conf /etc/nginx/http.d/nginx-cache.conf
+COPY nginx-nocache.conf /etc/nginx/http.d/nginx-nocache.conf
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY entrypoint.sh /once-entrypoint.sh
 COPY hooks/ /hooks/
