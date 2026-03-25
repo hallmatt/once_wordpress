@@ -52,6 +52,10 @@ EOSQL
 mysqladmin -u root shutdown
 wait "${TMPDB_PID}" 2>/dev/null || true
 
+# ── WordPress Core Files ──────────────────────────────────────
+echo "Installing WordPress core files..."
+cp -a /usr/src/wordpress/. "${WP_PATH}/"
+
 # ── WordPress Content ─────────────────────────────────────────
 if [ ! -d "${WP_CONTENT_DIR}/themes" ]; then
     echo "Copying default wp-content to storage..."
@@ -78,7 +82,7 @@ if [ ! -f "${CONFIG_DIR}/wp-config.php" ]; then
 define('DB_NAME',     'wordpress');
 define('DB_USER',     'wordpress');
 define('DB_PASSWORD', '${DB_PASSWORD}');
-define('DB_HOST',     'localhost');
+define('DB_HOST',     '127.0.0.1');
 define('DB_CHARSET',  'utf8mb4');
 define('DB_COLLATE',  '');
 
@@ -107,7 +111,7 @@ if (getenv('DISABLE_SSL')) {
 define('WP_DEBUG', false);
 
 if (!defined('ABSPATH')) {
-    define('ABSPATH', __DIR__ . '/');
+    define('ABSPATH', '/var/www/html/');
 }
 
 require_once ABSPATH . 'wp-settings.php';
