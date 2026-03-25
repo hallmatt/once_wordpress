@@ -4,6 +4,6 @@ set -e
 DB_PASSWORD=$(cat /storage/config/.db_password)
 
 echo "Dumping WordPress database..."
-mysqldump -u wordpress -p"${DB_PASSWORD}" wordpress > /storage/db/database.sql
+mariadb-dump -u wordpress -p"${DB_PASSWORD}" -h 127.0.0.1 wordpress > /storage/db/database.sql
 
 echo "Backup prepared."

@@ -3,14 +3,13 @@ set -e
 
 STORAGE_DIR="/storage"
 DB_DATA_DIR="${STORAGE_DIR}/db/mysql"
-DB_DUMP_FILE="${STORAGE_DIR}/db/database.sql"
-WP_CONTENT_DIR="${STORAGE_DIR}/wp-content"
+WP_DIR="${STORAGE_DIR}/wordpress"
 CONFIG_DIR="${STORAGE_DIR}/config"
 DB_PASSWORD_FILE="${CONFIG_DIR}/.db_password"
 WP_PATH="/var/www/html"
 
 # ── Storage Setup ──────────────────────────────────────────────
-mkdir -p "${DB_DATA_DIR}" "${WP_CONTENT_DIR}" "${CONFIG_DIR}"
+mkdir -p "${DB_DATA_DIR}" "${CONFIG_DIR}"
 
 # ── Database Password ─────────────────────────────────────────
 if [ ! -f "${DB_PASSWORD_FILE}" ]; then
@@ -30,43 +29,43 @@ if [ ! -d "${DB_DATA_DIR}/mysql" ]; then
 fi
 
 # Start MariaDB temporarily for setup
-mysqld --datadir="${DB_DATA_DIR}" --user=mysql --skip-networking &
+mariadbd --datadir="${DB_DATA_DIR}" --user=mysql --skip-networking &
 TMPDB_PID=$!
 
 echo "Waiting for MariaDB..."
 for i in $(seq 1 30); do
-    if mysqladmin ping --silent 2>/dev/null; then
+    if mariadb-admin ping --silent 2>/dev/null; then
         break
     fi
     sleep 1
 done
 
 # Create database and user
-mysql -u root <<-EOSQL
+mariadb -u root <<-EOSQL
     CREATE DATABASE IF NOT EXISTS wordpress CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+    GRANT ALL PRIVILEGES ON wordpress.* TO 'wordpress'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
     FLUSH PRIVILEGES;
 EOSQL
 
 # Stop temporary MariaDB
-mysqladmin -u root shutdown
+mariadb-admin -u root shutdown
 wait "${TMPDB_PID}" 2>/dev/null || true
 
-# ── WordPress Core Files ──────────────────────────────────────
-echo "Installing WordPress core files..."
-cp -a /usr/src/wordpress/. "${WP_PATH}/"
-
-# ── WordPress Content ─────────────────────────────────────────
-if [ ! -d "${WP_CONTENT_DIR}/themes" ]; then
-    echo "Copying default wp-content to storage..."
-    cp -a "${WP_PATH}/wp-content/." "${WP_CONTENT_DIR}/"
+# ── WordPress Core ────────────────────────────────────────────
+if [ ! -f "${WP_DIR}/wp-includes/version.php" ]; then
+    echo "Downloading WordPress..."
+    mkdir -p "${WP_DIR}"
+    wp core download --path="${WP_DIR}"
 fi
-rm -rf "${WP_PATH}/wp-content"
-ln -sf "${WP_CONTENT_DIR}" "${WP_PATH}/wp-content"
 
-# Install Once mu-plugin
-mkdir -p "${WP_CONTENT_DIR}/mu-plugins"
-cp /opt/once/mu-plugins/*.php "${WP_CONTENT_DIR}/mu-plugins/"
+# Serve WordPress from the persistent volume
+rm -rf "${WP_PATH}"
+ln -sf "${WP_DIR}" "${WP_PATH}"
+
+# ── Once Integration ─────────────────────────────────────────
+mkdir -p "${WP_DIR}/wp-content/mu-plugins"
+cp /opt/once/mu-plugins/*.php "${WP_DIR}/wp-content/mu-plugins/"
+cp /opt/once/up.php "${WP_DIR}/up.php"
 
 # ── wp-config.php ─────────────────────────────────────────────
 if [ ! -f "${CONFIG_DIR}/wp-config.php" ]; then
@@ -108,6 +107,10 @@ if (getenv('DISABLE_SSL')) {
     }
 }
 
+// Auto-updates — keep WordPress current without rebuilding the image
+define('WP_AUTO_UPDATE_CORE', true);
+define('FS_METHOD', 'direct');
+
 define('WP_DEBUG', false);
 
 if (!defined('ABSPATH')) {
@@ -118,10 +121,10 @@ require_once ABSPATH . 'wp-settings.php';
 WPEOF
 fi
 
-ln -sf "${CONFIG_DIR}/wp-config.php" "${WP_PATH}/wp-config.php"
+ln -sf "${CONFIG_DIR}/wp-config.php" "${WP_DIR}/wp-config.php"
 
 # ── Permissions ───────────────────────────────────────────────
-chown -R www-data:www-data "${WP_CONTENT_DIR}"
+chown -R www-data:www-data "${WP_DIR}"
 chown www-data:www-data "${CONFIG_DIR}/wp-config.php"
 chmod 640 "${CONFIG_DIR}/wp-config.php"
 
