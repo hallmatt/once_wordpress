@@ -53,9 +53,9 @@ wait "${TMPDB_PID}" 2>/dev/null || true
 
 # ── WordPress Core ────────────────────────────────────────────
 if [ ! -f "${WP_DIR}/wp-includes/version.php" ]; then
-    echo "Downloading WordPress..."
+    echo "Installing WordPress from image seed..."
     mkdir -p "${WP_DIR}"
-    wp core download --path="${WP_DIR}"
+    cp -a /usr/src/wordpress/. "${WP_DIR}/"
 fi
 
 # Serve WordPress from the persistent volume

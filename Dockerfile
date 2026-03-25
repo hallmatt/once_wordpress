@@ -1,3 +1,6 @@
+# Grab WordPress core files to seed the first boot
+FROM wordpress:latest AS seed
+
 FROM php:8.3-fpm-alpine
 
 # Install runtime dependencies
@@ -48,6 +51,9 @@ RUN curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh
 # MariaDB configuration and directories
 COPY mariadb-server.cnf /etc/my.cnf.d/mariadb-server.cnf
 RUN mkdir -p /var/run/mysqld && chown mysql:mysql /var/run/mysqld
+
+# WordPress seed (only used on first boot, then auto-updates take over)
+COPY --from=seed /usr/src/wordpress /usr/src/wordpress
 
 # Once integration files
 COPY mu-plugins/ /opt/once/mu-plugins/
